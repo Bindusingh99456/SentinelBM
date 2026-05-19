@@ -1,10 +1,19 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from app.models import ThreatAlert
 from app.pipeline import update_signatures, metrics, metrics_lock, active_signatures, signatures_lock
 
-api = Blueprint('api', __name__, url_prefix='/api/v1')
+api = Blueprint('api', __name__)
 
-@api.route('/alerts', methods=['GET'])
+# ── Dashboard ──────────────────────────────────────────────────
+@api.route('/', methods=['GET'])
+def index():
+    """Serves the main SentinelBM real-time dashboard."""
+    return render_template('index.html')
+
+# ── API v1 routes below ─────────────────────────────────────────
+v1 = Blueprint('v1', __name__, url_prefix='/api/v1')
+
+@v1.route('/alerts', methods=['GET'])
 def get_alerts():
     """
     Fetches paginated logs of historical alerts from the database.
@@ -24,7 +33,7 @@ def get_alerts():
         'current_page': page
     })
 
-@api.route('/signatures', methods=['POST'])
+@v1.route('/signatures', methods=['POST'])
 def post_signatures():
     """
     Dynamically updates the active threat signatures dictionary and its 
@@ -42,7 +51,7 @@ def post_signatures():
         'active_signatures': list(data.keys())
     })
 
-@api.route('/metrics', methods=['GET'])
+@v1.route('/metrics', methods=['GET'])
 def get_metrics():
     """
     Returns a summary JSON payload of cumulative scanner efficiency metrics.

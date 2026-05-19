@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentinelBM — Real-Time Intrusion Detection System</title>
+    <meta name="description" content="SentinelBM IDS: A Boyer-Moore powered real-time network intrusion detection dashboard with live alerts, metrics, and dynamic signature management." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+    <!-- ── TOP NAV ─────────────────────────────────────────────── -->
+    <header class="navbar" id="navbar">
+        <div class="navbar-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <div>
+                <span class="brand-name">SentinelBM</span>
+                <span class="brand-tag">IDS v1.0</span>
+            </div>
+        </div>
+
+        <div class="navbar-status">
+            <div class="status-dot" id="conn-dot"></div>
+            <span class="status-label" id="conn-label">Connecting…</span>
+        </div>
+
+        <div class="navbar-right">
+            <div class="nav-stat">
+                <span class="nav-stat-val" id="nav-threats">0</span>
+                <span class="nav-stat-lbl">Threats</span>
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-stat">
+                <span class="nav-stat-val" id="nav-logs">0</span>
+                <span class="nav-stat-lbl">Logs</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── MAIN LAYOUT ────────────────────────────────────────── -->
+    <main class="layout">
+
+        <!-- ── LEFT COLUMN ──────────────────────────────────── -->
+        <aside class="sidebar">
+
+            <!-- Threat Breakdown -->
+            <section class="card" id="section-breakdown">
+                <div class="card-header">
+                    <span class="card-title">Threat Breakdown</span>
+                    <span class="badge" id="badge-total">0 detected</span>
+                </div>
+                <ul class="breakdown-list" id="breakdown-list">
+                    <!-- filled by JS -->
+                    <li class="breakdown-empty">No threats detected yet</li>
+                </ul>
+            </section>
+
+            <!-- Signature Management -->
+            <section class="card" id="section-sigs">
+                <div class="card-header">
+                    <span class="card-title">Signatures</span>
+                    <button class="btn-icon" id="btn-add-sig" title="Add signature">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                </div>
+                <ul class="sig-list" id="sig-list">
+                    <!-- filled by JS -->
+                </ul>
+
+                <!-- Add Sig Form (hidden) -->
+                <div class="sig-form hidden" id="sig-form">
+                    <input class="form-input" id="sig-name" placeholder="Attack name (e.g. LFI)" />
+                    <input class="form-input" id="sig-pattern" placeholder="Pattern (e.g. ../etc)" />
+                    <div class="form-actions">
+                        <button class="btn btn-ghost" id="btn-cancel-sig">Cancel</button>
+                        <button class="btn btn-primary" id="btn-save-sig">Deploy</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BM Engine Stats -->
+            <section class="card" id="section-engine">
+                <div class="card-header">
+                    <span class="card-title">Boyer-Moore Engine</span>
+                </div>
+                <div class="engine-stats">
+                    <div class="engine-stat">
+                        <span class="engine-stat-val" id="stat-comparisons">0</span>
+                        <span class="engine-stat-lbl">Comparisons</span>
+                    </div>
+                    <div class="engine-stat">
+                        <span class="engine-stat-val" id="stat-skipped">0</span>
+                        <span class="engine-stat-lbl">Chars Skipped</span>
+                    </div>
+                    <div class="engine-stat">
+                        <span class="engine-stat-val" id="stat-exec">0 ms</span>
+                        <span class="engine-stat-lbl">Total Exec Time</span>
+                    </div>
+                    <div class="engine-stat highlight">
+                        <span class="engine-stat-val" id="stat-efficiency">—</span>
+                        <span class="engine-stat-lbl">Skip Efficiency</span>
+                    </div>
+                </div>
+            </section>
+
+        </aside>
+
+        <!-- ── RIGHT COLUMN ─────────────────────────────────── -->
+        <div class="content">
+
+            <!-- KPI Row -->
+            <div class="kpi-row">
+                <div class="kpi-card kpi-danger">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div>
+                        <div class="kpi-val" id="kpi-threats">0</div>
+                        <div class="kpi-lbl">Total Threats</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-info">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <div>
+                        <div class="kpi-val" id="kpi-logs">0</div>
+                        <div class="kpi-lbl">Logs Processed</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-success">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                        <div class="kpi-val" id="kpi-rate">0%</div>
+                        <div class="kpi-lbl">Threat Rate</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-accent">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <div>
+                        <div class="kpi-val" id="kpi-sigs">0</div>
+                        <div class="kpi-lbl">Active Signatures</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Feed -->
+            <section class="card feed-card">
+                <div class="card-header">
+                    <span class="card-title">Live Alert Feed</span>
+                    <div class="feed-controls">
+                        <div class="pulse-dot"></div>
+                        <span class="feed-live-label">LIVE</span>
+                        <button class="btn btn-ghost btn-sm" id="btn-clear">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <button class="filter-chip active" data-filter="all" id="filter-all">All</button>
+                    <button class="filter-chip" data-filter="SQL Injection" id="filter-sqli">SQL Injection</button>
+                    <button class="filter-chip" data-filter="Cross-Site Scripting (XSS)" id="filter-xss">XSS</button>
+                    <button class="filter-chip" data-filter="Path Traversal" id="filter-pt">Path Traversal</button>
+                    <button class="filter-chip" data-filter="Command Injection" id="filter-ci">Command Injection</button>
+                </div>
+
+                <!-- Table -->
+                <div class="table-wrapper" id="table-wrapper">
+                    <table class="alert-table" id="alert-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Timestamp</th>
+                                <th>Attack Type</th>
+                                <th>Source IP</th>
+                                <th>Raw Log</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alert-tbody">
+                            <tr class="empty-row" id="empty-row">
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                        <span>Monitoring… No threats detected yet</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ── TOAST ──────────────────────────────────────────────── -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Socket.IO from CDN -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
