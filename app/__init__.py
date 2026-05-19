@@ -5,7 +5,7 @@ from config import Config
 from flask_socketio import SocketIO
 
 # Initialize extensions globally
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO(cors_allowed_origins="*", async_mode="threading")
 
 def create_app(config_class=Config):
     """
